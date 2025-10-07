@@ -1,5 +1,6 @@
 // import { useState } from 'react';
 // import type { Movie } from '../../types/movie';
+import { Toaster } from 'react-hot-toast';
 import ErrorMessage from '../ErrorMessage/ErrorMessage';
 import Loader from '../Loader/Loader';
 import MovieGrid from '../MovieGrid/MovieGrid';
@@ -11,6 +12,7 @@ export default function App() {
   return (
     <>
       <div className={css.app}>
+        <Toaster position="top-center" reverseOrder={true} />
         <ErrorMessage />
         <Loader />
         <MovieGrid />
