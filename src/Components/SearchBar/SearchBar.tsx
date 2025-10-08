@@ -7,6 +7,7 @@ interface SearchBarProps {
 }
 
 export default function SearchBar({ onSubmit }: SearchBarProps) {
+  
     const handleSubmit = (e: FormEvent<HTMLFormElement> ) => {
         e.preventDefault();
 
