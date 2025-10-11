@@ -16,7 +16,7 @@ export default function App() {
   const [page, setPage] = useState<number>(1);
   const [selectedMovie, setSelectedMovie] = useState<Movie | null>(null);
 
-  const { data, isLoading, isError, error, isSuccess, isFetched } = useQuery({
+  const { data, isLoading, isPending, isError, error, isSuccess } = useQuery({
     queryKey: ['movies', searchQuery, page],
     queryFn: () => fetchMovies({ query: searchQuery, page }),
     enabled: searchQuery.length > 0,
@@ -66,11 +66,11 @@ export default function App() {
 
         <Toaster position="top-center" />
 
-        {(isLoading || isFetched) && <Loader />}
+        {isLoading && <Loader />}
 
         {isError && <ErrorMessage />}
 
-        {!isLoading &&!isFetched && !isError && searchQuery && movies.length > 0 && (
+        {!isPending && !isError && searchQuery && movies.length > 0 && (
           <>
             {totalPages > 1 && (
               <Pagination
