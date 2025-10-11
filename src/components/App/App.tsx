@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { useQuery, keepPreviousData } from '@tanstack/react-query';
 import toast, { Toaster } from 'react-hot-toast';
 import type { Movie } from '../../types/movie';
@@ -16,12 +16,24 @@ export default function App() {
   const [page, setPage] = useState<number>(1);
   const [selectedMovie, setSelectedMovie] = useState<Movie | null>(null);
 
-  const { data, isLoading, isError, error } = useQuery({
+  const { data, isLoading, isError, error, isSuccess, isFetched } = useQuery({
     queryKey: ['movies', searchQuery, page],
     queryFn: () => fetchMovies({ query: searchQuery, page }),
     enabled: searchQuery.length > 0,
     placeholderData: keepPreviousData,
   });
+
+  useEffect(() => {
+    if (isSuccess && data && data.results.length === 0 && searchQuery) {
+      toast.error('No monies for your request.', { id: 'no-results' });
+    }
+  }, [isSuccess, data, searchQuery]);
+
+  useEffect(() => {
+    if (isError) {
+      console.error('Query error:', error);
+    }
+  }, [isError, error]);
 
   const handleSearch = (query: string) => {
     if (query === searchQuery) {
@@ -44,14 +56,6 @@ export default function App() {
     setSelectedMovie(null);
   };
 
-  if (data && data.results.length === 0 && !isLoading) {
-    toast.error('No movies found for your request.', { id: 'no-results' });
-  }
-
-  if (isError) {
-    console.error('Query error:', error);
-  }
-
   const movies = (data && data.results) || [];
   const totalPages = (data && data.total_pages) || 0;
 
@@ -62,11 +66,11 @@ export default function App() {
 
         <Toaster position="top-center" />
 
-        {isLoading && <Loader />}
+        {(isLoading || isFetched) && <Loader />}
 
         {isError && <ErrorMessage />}
 
-        {!isLoading && !isError && searchQuery && movies.length > 0 && (
+        {!isLoading &&!isFetched && !isError && searchQuery && movies.length > 0 && (
           <>
             {totalPages > 1 && (
               <Pagination

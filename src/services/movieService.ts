@@ -15,7 +15,10 @@ interface FetchMoviesParams {
   page: number;
 }
 
-export async function fetchMovies({ query, page = 1 }: FetchMoviesParams) {
+export async function fetchMovies({
+  query,
+  page = 1,
+}: FetchMoviesParams): Promise<TMDBResponse> {
   const response = await axios.get<TMDBResponse>(`${BASE_URL}/search/movie`, {
     params: {
       query,
