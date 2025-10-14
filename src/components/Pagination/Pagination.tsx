@@ -16,12 +16,16 @@ export default function Pagination({
     return null;
   }
 
+  const handlePageClick = (event: { selected: number }) => {
+    onPageChange(event.selected + 1);
+  };
+
   return (
     <ReactPaginate
       pageCount={totalPages}
-      pageRangeDisplayed={5}
+      pageRangeDisplayed={3}
       marginPagesDisplayed={1}
-      onPageChange={({ selected }) => onPageChange(selected + 1)}
+      onPageChange={handlePageClick}
       forcePage={currentPage - 1}
       containerClassName={css.pagination}
       activeClassName={css.active}
