@@ -1,11 +1,13 @@
-import { ErrorMessage, Field, Form, Formik } from 'formik';
+import { ErrorMessage, Field, Form, Formik, type FormikHelpers } from 'formik';
+import { useMutation, useQueryClient } from '@tanstack/react-query';
 import * as Yup from 'yup';
+import toast from 'react-hot-toast';
 import type { NoteTag } from '../../types/note';
-import type { CreateNoteData } from '../../services/noteService';
+import { createNote, type CreateNoteData } from '../../services/noteService';
 import css from './NoteForm.module.css';
 
 interface NoteFormProps {
-  onSubmit: (value: CreateNoteData) => void;
+  onSuccess: () => void;
   onCancel: () => void;
 }
 
@@ -26,20 +28,39 @@ const initialValues: CreateNoteData = {
   tag: 'Todo' as NoteTag,
 };
 
-export default function NoteForm({ onSubmit, onCancel }: NoteFormProps) {
+export default function NoteForm({ onSuccess, onCancel }: NoteFormProps) {
+  const queryClient = useQueryClient();
+
+  const createNoteMutation = useMutation({
+    mutationFn: createNote,
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['notes'] });
+      toast.success('Note created successfully!');
+      onSuccess();
+    },
+    onError: (error: Error) => {
+      toast.error(error.message || 'Failed to create note');
+    },
+  });
+
   const handleCancel = (e: React.MouseEvent<HTMLButtonElement>): void => {
     e.preventDefault();
     onCancel();
+  };
+
+  const handleSubmit = (
+    values: CreateNoteData,
+    { setSubmitting }: FormikHelpers<CreateNoteData>
+  ): void => {
+    createNoteMutation.mutate(values);
+    setSubmitting(false);
   };
 
   return (
     <Formik
       initialValues={initialValues}
       validationSchema={noteSchema}
-      onSubmit={(values, { setSubmitting }) => {
-        onSubmit(values);
-        setSubmitting(false);
-      }}
+      onSubmit={handleSubmit}
     >
       {({ isSubmitting, isValid }) => (
         <Form className={css.form}>
@@ -88,9 +109,11 @@ export default function NoteForm({ onSubmit, onCancel }: NoteFormProps) {
             <button
               type="submit"
               className={css.submitButton}
-              disabled={isSubmitting || !isValid}
+              disabled={
+                isSubmitting || !isValid || createNoteMutation.isPending
+              }
             >
-              Create note
+              {createNoteMutation.isPending ? 'Creating...' : 'Create note'}
             </button>
           </div>
         </Form>

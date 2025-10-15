@@ -1,13 +1,8 @@
 import { useState } from 'react';
-import { useQuery, useQueryClient, useMutation } from '@tanstack/react-query';
+import { keepPreviousData, useQuery } from '@tanstack/react-query';
 import { useDebounce } from 'use-debounce';
-import toast, { Toaster } from 'react-hot-toast';
-import {
-  createNote,
-  deleteNote,
-  fetchNotes,
-  type CreateNoteData,
-} from '../../services/noteService';
+import { Toaster } from 'react-hot-toast';
+import { fetchNotes } from '../../services/noteService';
 import SearchBox from '../SearchBox/SearchBox';
 import NoteList from '../NoteList/NoteList';
 import Loader from '../Loader/Loader';
@@ -22,8 +17,6 @@ export default function App() {
   const [page, setPage] = useState<number>(1);
   const [isModalOpen, setIsModalOpen] = useState<boolean>(false);
 
-  const queryClient = useQueryClient();
-
   const [debounceedSearch] = useDebounce(searchQuery, 500);
 
   const { data, isLoading, isError } = useQuery({
@@ -34,30 +27,7 @@ export default function App() {
         perPage: 12,
         search: debounceedSearch,
       }),
-  });
-
-  const createNoteMutation = useMutation({
-    mutationFn: createNote,
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['notes'] });
-      toast.success('Note created successfully!');
-      setIsModalOpen(false);
-      setPage(1);
-    },
-    onError: () => {
-      toast.error('Failed to create note');
-    },
-  });
-
-  const deleteNoteMutation = useMutation({
-    mutationFn: deleteNote,
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['notes'] });
-      toast.success('Note successfully deleted!!');
-    },
-    onError: () => {
-      toast.error('Could not delete note.');
-    },
+    placeholderData: keepPreviousData,
   });
 
   const handleSearchChange = (value: string): void => {
@@ -69,12 +39,9 @@ export default function App() {
     setPage(newPage);
   };
 
-  const handleCreateNote = (values: CreateNoteData): void => {
-    createNoteMutation.mutate(values);
-  };
-
-  const handleDeleteNote = (noteId: string): void => {
-    deleteNoteMutation.mutate(noteId);
+  const handleNoteCreated = (): void => {
+    setIsModalOpen(false);
+    setPage(1);
   };
 
   const handleOpenModal = (): void => {
@@ -117,7 +84,7 @@ export default function App() {
         {isError && <ErrorMessage />}
 
         {!isLoading && !isError && notes.length > 0 && (
-          <NoteList notes={notes} onDelete={handleDeleteNote} />
+          <NoteList notes={notes} />
         )}
 
         {!isLoading && !isError && notes.length === 0 && (
@@ -128,7 +95,10 @@ export default function App() {
 
         {isModalOpen && (
           <Modal onClose={handleCloseModal}>
-            <NoteForm onSubmit={handleCreateNote} onCancel={handleCloseModal} />
+            <NoteForm
+              onSuccess={handleNoteCreated}
+              onCancel={handleCloseModal}
+            />
           </Modal>
         )}
       </div>
